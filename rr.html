@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KYC DApp</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.5/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+        }
+        header {
+            padding: 1rem;
+            background: #222;
+            color: white;
+            text-align: center;
+        }
+        #container {
+            display: flex;
+        }
+        #adminPanel, #bankPanel {
+            width: 45%; /* Adjust as needed */
+            padding: 1rem;
+            border: 1px solid #ccc;
+            margin: 0.5rem;
+        }
+        input, button {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            width: 100%;
+        }
+        .log {
+            background: #eee;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>KYC DApp</h1>
+        <p id="metaStatus">Connect MetaMask</p>
+        <p id="adminStatus"></p>
+    </header>
+
+    <div id="container">
+        <div id="adminPanel">
+            <h3>Admin Panel</h3>
+            <label>Bank Name:</label>
+            <input type="text" id="adminBankName" placeholder="e.g., Canara">
+
+            <label>Bank Address:</label>
+            <input type="text" id="adminBankAddress" placeholder="0x...">
+
+            <label>Registration No:</label>
+            <input type="number" id="adminBankRegNo" placeholder="e.g., 1234">
+
+            <button id="addBank">Add Bank</button>
+            <button id="removeBank">Remove Bank</button>
+        </div>
+
+        <div id="bankPanel">
+            <h3>Bank Panel</h3>
+
+            <label>Transfer Amount:</label>
+            <input type="number" id="transferAmount" placeholder="Enter amount to transfer">
+            
+            <label>Receiver Address:</label>
+            <input type="text" id="receiverAddress" placeholder="Enter receiver address">
+            
+            <button id="transferButton">Transfer</button>
+
+            <button id="loginButton">Login</button>
+        </div>
+    </div>
+
+    <h3>Registered Banks</h3>
+    <ul id="bankList"></ul>
+
+    <h3>Logs</h3>
+    <div class="log" id="logOutput"></div>
+
+    <script>
+        const contractAddress = '0xE1465a1e86cb845FB98638a62448c1F363Eb5948'; // Replace with your contract address
+        const contractABI =[
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_registerNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "addBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			}
+		],
+		"name": "BankAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "BankRemoved",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "fundBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "login",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "count",
+				"type": "uint256"
+			}
+		],
+		"name": "Login",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "removeBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "bankAddresses",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bank",
+				"type": "address"
+			}
+		],
+		"name": "getBankDetails",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycProviders",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycRecords",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "documentHash",
+				"type": "string"
+			},
+			{
+				"internalType": "enum DecentralizedKYC.Status",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "address",
+				"name": "verifiedBy",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "registeredBanks",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "addr",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "registerNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "loginCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "exists",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+        
+        let web3, contract, account, isAdmin = false;
+
+        window.addEventListener('load', async () => {
+            await connectMetaMask();
+        });
+
+        async function connectMetaMask() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await ethereum.request({ method: 'eth_requestAccounts' });
+                    const accounts = await web3.eth.getAccounts();
+                    account = accounts[0];
+                    document.getElementById('metaStatus').textContent = `Connected: ${account}`;
+
+                    contract = new web3.eth.Contract(contractABI, contractAddress);
+
+                    const adminAddress = await contract.methods.admin().call();
+                    isAdmin = adminAddress.toLowerCase() === account.toLowerCase();
+                    document.getElementById('adminStatus').textContent = isAdmin ? "✅ You are the admin." : "⛔ You are NOT the admin.";
+
+                   // Show/hide admin panel based on admin status
+                    document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
+
+                    await loadBankList();
+                } catch (error) {
+                    console.error("Error connecting to MetaMask:", error);
+                    document.getElementById('metaStatus').textContent = `MetaMask Error: ${error.message}`;
+                }
+            } else {
+                alert("Please install MetaMask to use this DApp.");
+            }
+        }
+
+async function loadBankList() {
+    try {
+        const bankListEl = document.getElementById('bankList');
+        bankListEl.innerHTML = '';
+        let addresses = [];
+        for (let i = 0; ; i++) {
+            try {
+                const address = await contract.methods.bankAddresses(i).call();
+                addresses.push(address);
+            } catch (error) {
+                // Break the loop if an error occurs, indicating no more banks
+                break;
+            }
+        }
+
+        for (const addr of addresses) {
+            const bankDetails = await contract.methods.getBankDetails(addr).call();
+            const li = document.createElement('li');
+            li.textContent = `🏦 ${bankDetails[0]} (Reg#: ${bankDetails[2]}, Address: ${addr})`;
+            bankListEl.appendChild(li);
+        }
+
+        log(`✅ Bank list updated. Total banks: ${addresses.length}`);
+    } catch (err) {
+        log(`❌ Failed to fetch bank list: ${err.message}`);
+    }
+}
+
+// Admin Functions
+document.getElementById('addBank').addEventListener('click', async () => {
+    const name = document.getElementById('adminBankName').value;
+    const address = document.getElementById('adminBankAddress').value;
+    const reg = document.getElementById('adminBankRegNo').value;
+
+    try {
+        // Make sure the account is set correctly (from MetaMask)
+        const account = await web3.eth.getCoinbase(); 
+
+        // Call the smart contract's addBank method with gas estimation (if needed)
+        const gasEstimate = await contract.methods.addBank(name, address, reg).estimateGas({ from: account });
+        
+        await contract.methods.addBank(name, address, reg).send({ from: account, gas: gasEstimate });
+
+        log(`✅ Bank added: ${name} (${address})`);
+        await loadBankList(); // Refresh the bank list after adding
+    } catch (err) {
+        log(`❌ Error adding bank: ${err.message}`);
+    }
+});
+
+
+document.getElementById('removeBank').addEventListener('click', async () => {
+    const address = document.getElementById('adminBankAddress').value;
+
+    try {
+        await contract.methods.removeBank(address).send({ from: account });
+        log(`❌ Bank removed: ${address}`);
+        await loadBankList(); // refresh the list
+    } catch (err) {
+        log(`❌ Error removing bank: ${err.message}`);
+    }
+});
+
+// Bank functions
+document.getElementById('transferButton').addEventListener('click', async () => {
+    const receiver = document.getElementById('receiverAddress').value;
+    const amount = document.getElementById('transferAmount').value;
+
+    // Check if receiver is registered bank
+    const isReceiverBank = await contract.methods.registeredBanks(receiver).call()
+        .then(bank => bank.exists);
+    
+    if (!isReceiverBank) {
+        alert("Receiver is not a registered bank!");
+        return;
+    }
+
+    // Proceed with transfer
+});
+
+document.getElementById('loginButton').addEventListener('click', async () => {
+    try {
+        await contract.methods.login().send({ from: account, gas: 300000 });
+        log(`✅ Login successful`);
+    } catch (err) {
+        log(`❌ Login failed: ${err.message}`);
+    }
+});
+
+function log(message) {
+    const logOutput = document.getElementById('logOutput');
+    const time = new Date().toLocaleTimeString();
+    logOutput.textContent += `[${time}] ${message}\n`;
+    logOutput.scrollTop = logOutput.scrollHeight;
+}
+ </script>
+</body>
+</html>

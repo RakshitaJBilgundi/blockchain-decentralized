@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Decentralized KYC DApp</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    body,
+    html {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #f0f0f0;
+      user-select: none;
+    }
+
+    header h1 i {
+      color: #ffcc00;
+    }
+
+    #metaStatus,
+    #adminStatus {
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #ddd;
+    }
+
+    #authButtons button {
+      background: transparent;
+      border: 2px solid #ffcc00;
+      color: #ffcc00;
+      padding: 0.4rem 1rem;
+      margin-left: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    #authButtons button:hover {
+      background: #ffcc00;
+      color: #333;
+    }
+
+    #container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 320px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1.5rem 1.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      overflow-y: auto;
+      box-shadow: inset -2px 0 8px rgba(0, 0, 0, 0.7);
+    }
+
+    #sidebar h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #ffcc00;
+      padding-bottom: 0.3rem;
+      user-select: none;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+    }
+
+    .input-group label {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      user-select: none;
+    }
+
+    .input-group input {
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+      outline: none;
+      transition: box-shadow 0.3s ease;
+      color: #333;
+    }
+
+    .input-group input:focus {
+      box-shadow: 0 0 8px #ffcc00;
+    }
+
+    button {
+      background: #ffcc00;
+      border: none;
+      color: #333;
+      font-weight: 700;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      user-select: none;
+      box-shadow: 0 4px 6px rgba(255, 204, 0, 0.5);
+    }
+
+    button:hover {
+      background: #e6b800;
+      box-shadow: 0 6px 12px rgba(230, 184, 0, 0.7);
+    }
+
+    button:disabled {
+      background: #aaa;
+      color: #555;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Main Content */
+    #mainContent {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 2rem 3rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      user-select: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 2px solid #ffcc00;
+      color: #ffcc00;
+      padding: 0.5rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .tab-btn.active {
+      background: #ffcc00;
+      color: #333;
+      box-shadow: 0 0 12px #ffcc00;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: rgba(255, 204, 0, 0.15);
+    }
+
+    .panel {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1;
+      overflow-y: auto;
+      user-select: none;
+    }
+
+    .panel.active {
+      display: flex;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    ul li {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 1rem;
+      color: #f0f0f0;
+    }
+
+    ul li:last-child {
+      border-bottom: none;
+    }
+
+    #logOutput {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      color: #ffcc00;
+      box-shadow: inset 0 0 10px #ffcc00;
+      user-select: text;
+    }
+
+    /* Notifications */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #4caf50;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 6px;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+      user-select: none;
+    }
+
+    .notification.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .notification.error {
+      background-color: #e53935;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      #container {
+        flex-direction: column;
+      }
+
+      #sidebar {
+        width: 100%;
+        max-height: 350px;
+        overflow-y: auto;
+        box-shadow: none;
+        border-bottom: 2px solid #ffcc00;
+      }
+
+      #mainContent {
+        padding: 1rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1><i class="fas fa-shield-alt"></i> Decentralized KYC</h1>
+    <div>
+      <p id="metaStatus">Not connected</p>
+      <p id="adminStatus"></p>
+    </div>
+    <div id="authButtons">
+      <button id="connectWalletBtn">Connect Wallet</button>
+    </div>
+  </header>
+
+  <div id="container" style="display:none;">
+    <aside id="sidebar">
+      <!-- Customer Panel -->
+      <section id="customerPanelSidebar">
+        <h2>Customer Panel</h2>
+        <div class="input-group">
+          <label for="kycName">Full Name:</label>
+          <input type="text" id="kycName" placeholder="John Doe" autocomplete="off" />
+        </div>
+        <div class="input-group">
+          <label for="kycHash">Document Hash:</label>
+          <input type="text" id="kycHash" placeholder="Qm..." autocomplete="off" />
+        </div>
+        <button id="submitKYCBtn">Submit KYC</button>
+        <button id="checkKYCBtn">Check KYC Status</button>
+        <div id="kycStatusOutput" style="margin-top: 10px; font-weight: 600;"></div>
+      </section>
+
+      <!-- Admin Panel controls -->
+      <section id="fundBankSection" style="display:none;">
+        <h2>Fund Bank</h2>
+        <div class="input-group">
+          <label for="fundBankAddress">Bank Address</label>
+          <input type="text" id="fundBankAddress" placeholder="0x..." autocomplete="off" />
+        </div>
+        <div class="input-group">
+          <label for="fundAmount">Amount (ETH)</label>
+          <input type="number" id="fundAmount" placeholder="Amount" min="0" step="any" />
+        </div>
+        <button id="fundBankBtn">Fund Bank</button>
+      </section>
+
+      <section id="transferBankSection" style="display:none;">
+        <h2>Transfer Funds</h2>
+        <div class="input-group">
+          <label for="transferSenderAddress">Sender Address</label>
+          <input type="text" id="transferSenderAddress" disabled />
+        </div>
+        <div class="input-group">
+          <label for="transferReceiverAddress">Receiver Address</label>
+          <input type="text" id="transferReceiverAddress" placeholder="0x..." autocomplete="off" />
+        </div>
+        <div class="input-group">
+          <label for="transferAmount">Amount (ETH)</label>
+          <input type="number" id="transferAmount" placeholder="Amount" min="0" step="any" />
+        </div>
+        <button id="transferBankBtn">Transfer</button>
+      </section>
+    </aside>
+
+    <main id="mainContent">
+      <div id="tabs">
+        <button id="bankTabBtn" class="tab-btn active">Bank Panel</button>
+        <button id="adminTabBtn" class="tab-btn" style="display:none;">Admin Panel</button>
+      </div>
+
+      <section id="bankPanel" class="panel active">
+        <h2>Registered Banks</h2>
+        <ul id="bankList"></ul>
+
+        <h2>Transfer & Fund Events</h2>
+        <ul id="eventList"></ul>
+      </section>
+
+      <section id="adminPanel" class="panel">
+        <h2>Add / Remove Bank</h2>
+        <div class="input-group">
+          <label for="bankNameAdmin">Bank Name:</label>
+          <input type="text" id="bankNameAdmin" placeholder="e.g., Canara" autocomplete="off" />
+        </div>
+        <div class="input-group">
+          <label for="bankAddressAdmin">Bank Address:</label>
+          <input type="text" id="bankAddressAdmin" placeholder="0x..." autocomplete="off" />
+        </div>
+        <div class="input-group">
+          <label for="bankRegNoAdmin">Registration No:</label>
+          <input type="number" id="bankRegNoAdmin" placeholder="e.g., 1234" />
+        </div>
+        <div class="bank-actions" style="display:flex; gap:1rem;">
+          <button id="addBankAdmin">Add Bank</button>
+          <button id="removeBankAdmin">Remove Bank</button>
+        </div>
+      </section>
+
+      <h2>Activity Logs</h2>
+      <div id="logOutput" tabindex="0" aria-label="Activity Logs">Logs will appear here...</div>
+    </main>
+  </div>
+
+  <div id="notification" class="notification" role="alert" aria-live="assertive" style="display:none;"></div>
+
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.5/dist/web3.min.js"></script>
+  <script>
+    let web3, contract, account, adminAddress;
+    const contractAddress = "0x1b9b468C7c52832d743Ab07e973a0593AeD72085"; // Replace with your contract address
+    const contractABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_registerNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "addBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			}
+		],
+		"name": "BankAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "BankRemoved",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "fundBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "login",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "count",
+				"type": "uint256"
+			}
+		],
+		"name": "Login",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "removeBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_documentHash",
+				"type": "string"
+			}
+		],
+		"name": "submitKYC",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "approve",
+				"type": "bool"
+			}
+		],
+		"name": "verifyKYC",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "bankAddresses",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bank",
+				"type": "address"
+			}
+		],
+		"name": "getBankDetails",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getKYCStatus",
+		"outputs": [
+			{
+				"internalType": "enum DecentralizedKYC.Status",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycProviders",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycRecords",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "documentHash",
+				"type": "string"
+			},
+			{
+				"internalType": "enum DecentralizedKYC.Status",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "address",
+				"name": "verifiedBy",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "registeredBanks",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "addr",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "registerNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "loginCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "exists",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+
+    const notificationEl = document.getElementById("notification");
+    const containerEl = document.getElementById("container");
+    const adminTabBtn = document.getElementById("adminTabBtn");
+    const bankTabBtn = document.getElementById("bankTabBtn");
+    const adminPanel = document.getElementById("adminPanel");
+    const bankPanel = document.getElementById("bankPanel");
+    const fundBankSection = document.getElementById("fundBankSection");
+    const transferBankSection = document.getElementById("transferBankSection");
+
+    async function showNotification(message, isError = false) {
+      notificationEl.textContent = message;
+      notificationEl.className = "notification " + (isError ? "error show" : "show");
+      notificationEl.style.display = "block";
+      setTimeout(() => {
+        notificationEl.className = "notification";
+        notificationEl.style.display = "none";
+      }, 3500);
+    }
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("MetaMask is required to use this DApp.");
+        return;
+      }
+      try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        web3 = new Web3(window.ethereum);
+        const accounts = await web3.eth.getAccounts();
+        account = accounts[0];
+        document.getElementById("metaStatus").innerText = `Connected: ${account.substr(0, 6)}...${account.substr(account.length - 4)}`;
+        document.getElementById("transferSenderAddress").value = account;
+        containerEl.style.display = "flex";
+
+        contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        adminAddress = await contract.methods.admin().call();
+
+        if (account.toLowerCase() === adminAddress.toLowerCase()) {
+          document.getElementById("adminStatus").innerText = "Logged in as Admin";
+          adminTabBtn.style.display = "inline-block";
+          fundBankSection.style.display = "block";
+          transferBankSection.style.display = "block";
+        } else {
+          document.getElementById("adminStatus").innerText = "Logged in as User";
+          adminTabBtn.style.display = "none";
+          fundBankSection.style.display = "none";
+          transferBankSection.style.display = "none";
+        }
+
+        await fetchBankDetails();
+        subscribeToEvents();
+
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to connect wallet.", true);
+      }
+    }
+
+    async function submitKYC() {
+      const name = document.getElementById("kycName").value.trim();
+      const docHash = document.getElementById("kycHash").value.trim();
+      if (!name || !docHash) {
+        alert("Please fill in both name and document hash.");
+        return;
+      }
+      try {
+        await contract.methods.submitKYC(name, docHash).send({ from: account });
+        logMessage(`KYC submitted for ${name}`);
+        showNotification("KYC submitted successfully!");
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to submit KYC.", true);
+      }
+    }
+
+    async function checkKYCStatus() {
+      try {
+        const status = await contract.methods.getKYCStatus(account).call();
+        const statusMap = ["Pending", "Approved", "Rejected"];
+        const statusText = statusMap[status] || "Unknown";
+        document.getElementById("kycStatusOutput").innerText = `KYC Status: ${statusText}`;
+        logMessage(`KYC status checked: ${statusText}`);
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to get KYC status.", true);
+      }
+    }
+
+    async function addBank() {
+      const name = document.getElementById("bankNameAdmin").value.trim();
+      const addr = document.getElementById("bankAddressAdmin").value.trim();
+      const regNo = document.getElementById("bankRegNoAdmin").value.trim();
+      if (!name || !addr || !regNo) {
+        alert("Please fill all bank details.");
+        return;
+      }
+      try {
+        await contract.methods.addBank(name, addr, regNo).send({ from: account });
+        logMessage(`Bank added: ${name}`);
+        showNotification("Bank added successfully!");
+        await fetchBankDetails();
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to add bank.", true);
+      }
+    }
+
+    async function removeBank() {
+      const addr = document.getElementById("bankAddressAdmin").value.trim();
+      if (!addr) {
+        alert("Please enter bank address to remove.");
+        return;
+      }
+      try {
+        await contract.methods.removeBank(addr).send({ from: account });
+        logMessage(`Bank removed: ${addr}`);
+        showNotification("Bank removed successfully!");
+        await fetchBankDetails();
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to remove bank.", true);
+      }
+    }
+
+    async function fundBank() {
+      const addr = document.getElementById("fundBankAddress").value.trim();
+      const amount = document.getElementById("fundAmount").value.trim();
+      if (!addr || !amount || isNaN(amount) || amount <= 0) {
+        alert("Please enter valid bank address and amount.");
+        return;
+      }
+      try {
+        const weiAmount = web3.utils.toWei(amount, "ether");
+        await contract.methods.fundBank(addr, weiAmount).send({ from: account });
+        logMessage(`Funded bank ${addr} with ${amount} ETH`);
+        showNotification("Bank funded successfully!");
+        await fetchBankDetails();
+      } catch (error) {
+        console.error(error);
+        showNotification("Failed to fund bank.", true);
+      }
+    }
+
+    async function transferFunds() {
+      const receiver = document.getElementById("transferReceiverAddress").value.trim();
+      const amount = document.getElementById("transferAmount").value.trim();
+      if (!receiver || !amount || isNaN(amount) || amount <= 0) {
+        alert("Please enter valid receiver address and amount.");
+        return;
+      }
+      try {
+        const weiAmount = web3.utils.toWei(amount, "ether");
+        await contract.methods.transfer(receiver, weiAmount).send({ from: account });
+        logMessage(`Transferred ${amount} ETH to ${receiver}`);
+        showNotification("Transfer successful!");
+        await fetchBankDetails();
+      } catch (error) {
+        console.error(error);
+        showNotification("Transfer failed.", true);
+      }
+    }
+
+    async function fetchBankDetails() {
+      try {
+        const bankList = document.getElementById("bankList");
+        bankList.innerHTML = "";
+
+        // Solidity public array does not expose length, so try max 100 banks
+        const maxBanks = 100;
+        let banks = [];
+        for (let i = 0; i < maxBanks; i++) {
+          try {
+            const addr = await contract.methods.bankAddresses(i).call();
+            if (addr === "0x0000000000000000000000000000000000000000") break;
+            banks.push(addr);
+          } catch {
+            break;
+          }
+        }
+
+        for (const addr of banks) {
+          const details = await contract.methods.getBankDetails(addr).call();
+          const [name, bankAddr, regNo, balanceWei, loginCount] = details;
+          const balanceEth = web3.utils.fromWei(balanceWei, "ether");
+          const li = document.createElement("li");
+          li.textContent = `${name} (${bankAddr}) - Reg#: ${regNo} - Balance: ${balanceEth} ETH - Logins: ${loginCount}`;
+          bankList.appendChild(li);
+        }
+      } catch (error) {
+        console.error("Failed to fetch bank details:", error);
+      }
+    }
+
+    function subscribeToEvents() {
+      contract.events.BankAdded({}, (error, event) => {
+        if (!error) {
+          logMessage(`Bank Added: ${event.returnValues.name} (${event.returnValues.bankAddress})`);
+          fetchBankDetails();
+        }
+      });
+
+      contract.events.BankRemoved({}, (error, event) => {
+        if (!error) {
+          logMessage(`Bank Removed: ${event.returnValues.bankAddress}`);
+          fetchBankDetails();
+        }
+      });
+
+      contract.events.Transfer({}, (error, event) => {
+        if (!error) {
+          const { sender, receiver, amount } = event.returnValues;
+          const ethAmount = web3.utils.fromWei(amount, "ether");
+          logMessage(`Transfer: ${ethAmount} ETH from ${sender} to ${receiver}`);
+          fetchBankDetails();
+        }
+      });
+
+      contract.events.Login({}, (error, event) => {
+        if (!error) {
+          const { user, count } = event.returnValues;
+          logMessage(`Login: ${user} logged in ${count} times`);
+        }
+      });
+    }
+
+    function logMessage(message) {
+      const logOutput = document.getElementById("logOutput");
+      const time = new Date().toLocaleTimeString();
+      logOutput.textContent += `[${time}] ${message}\n`;
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    // Tab switching
+    document.getElementById("bankTabBtn").addEventListener("click", () => {
+      bankPanel.classList.add("active");
+      adminPanel.classList.remove("active");
+      bankTabBtn.classList.add("active");
+      adminTabBtn.classList.remove("active");
+    });
+
+    document.getElementById("adminTabBtn").addEventListener("click", () => {
+      adminPanel.classList.add("active");
+      bankPanel.classList.remove("active");
+      adminTabBtn.classList.add("active");
+      bankTabBtn.classList.remove("active");
+    });
+
+    // Connect wallet button
+    document.getElementById("connectWalletBtn").addEventListener("click", connectWallet);
+  </script>
+</body>
+
+</html>

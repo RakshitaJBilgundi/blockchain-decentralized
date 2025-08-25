@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KYC DApp - Full UI/UX</title>
+<style>
+  /* Reset & base */
+  * { box-sizing: border-box; }
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5; color: #2c3e50;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  a { color: #3498db; text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; }
+  /* Layout */
+  #app { display: flex; height: 100vh; overflow: hidden; background: #f0f2f5; }
+  #sidebar {
+    width: 260px; background: #2c3e50; color: white;
+    display: flex; flex-direction: column; padding-top: 30px;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  }
+  #sidebar h2 {
+    margin: 0 0 30px 25px; font-size: 1.8rem; font-weight: 700;
+    letter-spacing: 1.5px; user-select: none; white-space: nowrap;
+  }
+  #sidebar nav { flex: 1; }
+  #sidebar nav a {
+    display: flex; align-items: center; padding: 14px 25px;
+    border-left: 4px solid transparent; font-weight: 600; font-size: 1rem;
+    white-space: nowrap; user-select: none;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  #sidebar nav a:hover, #sidebar nav a.active {
+    background-color: #34495e; border-left-color: #3498db; color: #ecf0f1;
+  }
+  #sidebar nav a i {
+    margin-right: 15px; font-size: 1.2rem; width: 20px; text-align: center;
+  }
+  #sidebar nav a.logout {
+    margin-top: auto; border-top: 1px solid #34495e;
+    color: #e74c3c; font-weight: 700;
+  }
+  #sidebar nav a.logout:hover {
+    background-color: #c0392b; border-left-color: #e74c3c; color: white;
+  }
+  #main {
+    flex: 1; padding: 30px 40px; overflow-y: auto; background: white;
+    border-radius: 0 15px 15px 0; box-shadow: -2px 0 8px rgba(0,0,0,0.05);
+    display: flex; flex-direction: column;
+  }
+  #topbar {
+    height: 50px; background: #ecf0f1; border-radius: 12px;
+    display: flex; justify-content: flex-end; align-items: center;
+    padding: 0 20px; margin-bottom: 30px; font-weight: 600; color: #2c3e50;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  }
+  #connect-wallet-btn {
+    background: #3498db; border: none; color: white;
+    padding: 8px 18px; border-radius: 8px; cursor: pointer;
+    font-size: 1rem; transition: background-color 0.3s ease; user-select: none;
+  }
+  #connect-wallet-btn:hover:not(:disabled) { background: #2980b9; }
+  #connect-wallet-btn:disabled { background: #95a5a6; cursor: not-allowed; }
+  #wallet-address {
+    margin-left: 20px; font-weight: 700; font-size: 1rem; color: #27ae60; user-select: text;
+  }
+  form { max-width: 600px; margin-top: 10px; }
+  label {
+    display: block; margin-bottom: 8px; font-weight: 700;
+    font-size: 0.95rem; color: #34495e;
+  }
+  input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="date"] {
+    width: 100%; padding: 12px 14px; margin-bottom: 20px;
+    border: 1.8px solid #bdc3c7; border-radius: 10px; font-size: 1rem;
+    transition: border-color 0.3s ease; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.05);
+  }
+  input:focus {
+    border-color: #3498db; outline: none; box-shadow: 0 0 8px #3498dbaa;
+  }
+  button[type="submit"], button[type="button"] {
+    background: #3498db; border: none; color: white;
+    padding: 12px 24px; border-radius: 12px; cursor: pointer;
+    font-size: 1rem; font-weight: 700; transition: background-color 0.3s ease;
+    user-select: none; margin-right: 15px;
+    box-shadow: 0 4px 6px rgba(52,152,219,0.4);
+  }
+  button:hover { background: #2980b9; box-shadow: 0 6px 10px rgba(41,128,185,0.6); }
+  button:disabled { background: #95a5a6; cursor: not-allowed; box-shadow: none; }
+  section { display: none; flex: 1; overflow-y: auto; animation: fadeIn 0.3s ease forwards; }
+  section.active { display: block; }
+  #auth-container {
+    max-width: 420px; margin: 100px auto; background: white;
+    padding: 40px 50px; border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); user-select: none;
+  }
+  #auth-container h2 {
+    margin-top: 0; text-align: center; margin-bottom: 30px;
+    font-size: 2rem; color: #34495e; font-weight: 900; letter-spacing: 2px;
+  }
+  #auth-container p {
+    text-align: center; margin-top: 20px; font-size: 0.95rem; color: #7f8c8d;
+  }
+  #auth-container p a {
+    font-weight: 700; color: #3498db; cursor: pointer;
+  }
+  #auth-container p a:hover { color: #2980b9; }
+  .error {
+    color: #e74c3c; margin-bottom: 20px; font-weight: 700; text-align: center;
+  }
+  @media (max-width: 900px) {
+    #app { flex-direction: column; }
+    #sidebar {
+      width: 100%; height: 60px; flex-direction: row;
+      padding-top: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 0 0 15px 15px; overflow-x: auto;
+    }
+    #sidebar.collapsed { width: 100%; }
+    #sidebar h2 { display: none; }
+    #sidebar nav {
+      display: flex; flex: 1; justify-content: space-around; align-items: center;
+    }
+    #sidebar nav a {
+      flex: none; border-left: none; border-bottom: none;
+      padding: 10px 15px; font-size: 0.9rem;
+    }
+    #sidebar nav a.logout { border-top: none; color: #e74c3c; }
+    #main {
+      flex: none; height: calc(100vh - 60px); padding: 20px 15px;
+      border-radius: 0; box-shadow: none;
+    }
+  }
+  @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+  table {
+    width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem;
+  }
+  th, td {
+    border: 1px solid #ddd; padding: 12px 15px; vertical-align: top;
+    text-align: left; word-break: break-word;
+  }
+  th {
+    background-color: #3498db; color: white; font-weight: 700; user-select: none;
+  }
+  tbody tr:nth-child(even) { background-color: #f9f9f9; }
+  .log-entry {
+    font-size: 0.85rem; color: #555; margin-bottom: 6px; white-space: pre-wrap;
+    border-left: 3px solid #3498db; padding-left: 6px;
+  }
+  .remove-btn {
+    background-color: #e74c3c; padding: 8px 14px; font-size: 0.9rem;
+    border-radius: 12px; cursor: pointer; color: white; border: none;
+    transition: background-color 0.3s ease; user-select: none;
+    box-shadow: 0 3px 6px rgba(231,76,60,0.5);
+  }
+  .remove-btn:hover {
+    background-color: #c0392b; box-shadow: 0 5px 10px rgba(192,57,43,0.7);
+  }
+  #your-bank-details {
+    background-color: #d6eaf8; border: 2px solid #3498db; border-radius: 15px;
+    padding: 20px 30px; margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(52,152,219,0.3);
+    max-width: 700px; user-select: none; position: relative;
+  }
+  #your-bank-details h3 {
+    margin-top: 0; color: #21618c; font-weight: 900; font-size: 1.5rem; margin-bottom: 15px;
+  }
+  #your-bank-details p {
+    font-size: 1.05rem; margin: 6px 0; color: #154360;
+  }
+  #your-bank-details button {
+    position: absolute; top: 20px; right: 30px;
+    background-color: #e74c3c; padding: 8px 16px; font-weight: 700;
+    font-size: 0.95rem; border-radius: 12px;
+    box-shadow: 0 3px 6px rgba(231,76,60,0.5);
+    transition: background-color 0.3s ease;
+    user-select: none; cursor: pointer; border: none;
+  }
+  #your-bank-details button:hover {
+    background-color: #c0392b; box-shadow: 0 5px 10px rgba(192,57,43,0.7);
+  }
+</style>
+</head>
+<body>
+
+<!-- Authentication Container -->
+<div id="auth-container" aria-label="Authentication Container">
+  <h2 id="auth-title">Login</h2>
+  <form id="auth-form" novalidate>
+    <div id="auth-error" class="error" aria-live="polite" style="display:none;"></div>
+    <label for="auth-email">Email</label>
+    <input type="email" id="auth-email" name="auth-email" required placeholder="your@email.com" autocomplete="username" />
+    <label for="auth-password">Password</label>
+    <input type="password" id="auth-password" name="auth-password" required placeholder="********" autocomplete="current-password" />
+    <div id="auth-extra-fields" style="display:none;">
+      <label for="auth-dob">Date of Birth</label>
+      <input type="date" id="auth-dob" name="auth-dob" max="" />
+      <label for="auth-aadhaar">Aadhaar Number</label>
+      <input type="text" id="auth-aadhaar" name="auth-aadhaar" placeholder="XXXX XXXX XXXX" maxlength="14" pattern="\d{4}\s\d{4}\s\d{4}" />
+    </div>
+    <div id="auth-confirm-container" style="display:none;">
+      <label for="auth-confirm-password">Confirm Password</label>
+      <input type="password" id="auth-confirm-password" name="auth-confirm-password" placeholder="********" autocomplete="new-password" />
+    </div>
+    <button type="submit" id="auth-submit-btn" aria-label="Submit authentication form">Login</button>
+  </form>
+  <p id="auth-switch-text" aria-live="polite">Don't have an account? <a id="switch-to-signup" href="#">Sign Up</a></p>
+</div>
+
+<!-- Main App -->
+<div id="app" style="display:none;" aria-label="Main Application">
+  <aside id="sidebar" aria-label="Sidebar navigation">
+    <h2>KYC DApp</h2>
+    <button id="sidebar-toggle" aria-label="Toggle sidebar" title="Toggle sidebar" tabindex="0">&#9776;</button>
+    <nav>
+      <a href="#" data-section="fund-bank" class="active" tabindex="0" aria-current="page"><i>💰</i><span>Fund Bank</span></a>
+      <a href="#" data-section="transfer-bank" tabindex="0"><i>🔄</i><span>Transfer Bank</span></a>
+      <a href="#" data-section="bank-panel" tabindex="0"><i>🏦</i><span>Bank Panel</span></a>
+      <a href="#" data-section="customer-panel" tabindex="0"><i>👤</i><span>Customer Panel</span></a>
+      <a href="#" data-section="admin-panel" tabindex="0"><i>⚙️</i><span>Admin Panel</span></a>
+      <a href="#" id="logout-link" class="logout" tabindex="0"><i>🚪</i><span>Logout</span></a>
+    </nav>
+  </aside>
+  <main id="main" tabindex="0">
+    <div id="your-bank-details" style="display:none;" aria-label="Your Bank Details Panel">
+      <h3>Your Bank Details</h3>
+      <p><strong>Name:</strong> <span id="your-bank-name"></span></p>
+      <p><strong>Address:</strong> <span id="your-bank-address"></span></p>
+      <p><strong>Registration No.:</strong> <span id="your-bank-regno"></span></p>
+      <button id="your-bank-remove-btn" aria-label="Remove your bank">Remove Bank</button>
+    </div>
+
+    <div id="topbar" role="region" aria-label="Wallet connection status">
+      <button id="connect-wallet-btn" aria-live="polite" aria-pressed="false">Connect Wallet</button>
+      <span id="wallet-address" aria-live="polite" aria-atomic="true"></span>
+    </div>
+
+    <section id="fund-bank" aria-label="Fund Bank Section">
+      <h2>Fund Bank</h2>
+      <form id="fund-bank-form" novalidate>
+        <label for="fund-bank-address">Bank Address (Admin)</label>
+        <input type="text" id="fund-bank-address" name="fund-bank-address" placeholder="0x..." required />
+        <label for="fund-bank-amount">Amount (ETH)</label>
+        <input type="number" id="fund-bank-amount" name="fund-bank-amount" placeholder="Amount" min="0" step="0.0001" required />
+        <button type="submit" aria-label="Fund bank">Fund Bank</button>
+      </form>
+    </section>
+
+    <section id="transfer-bank" aria-label="Transfer Bank Section">
+      <h2>Transfer Bank</h2>
+      <form id="transfer-bank-form" novalidate>
+        <label for="transfer-sender-address">Sender Address (Your Wallet)</label>
+        <input type="text" id="transfer-sender-address" name="transfer-sender-address" readonly aria-readonly="true" />
+        <label for="transfer-receiver-address">Receiver Address</label>
+        <input type="text" id="transfer-receiver-address" name="transfer-receiver-address" placeholder="0x..." required />
+        <label for="transfer-amount">Amount (ETH)</label>
+        <input type="number" id="transfer-amount" name="transfer-amount" placeholder="Amount" min="0" step="0.0001" required />
+        <button type="submit" aria-label="Transfer funds">Transfer Funds</button>
+      </form>
+    </section>
+
+    <section id="bank-panel" aria-label="Bank Panel Section">
+      <h2>Bank Panel</h2>
+      <table id="bank-table" aria-describedby="bank-panel-desc">
+        <caption id="bank-panel-desc" style="text-align:left; font-style: italic; margin-bottom: 8px; color:#555;">
+          Shows all registered banks with logs and transaction stats.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Bank Name</th>
+            <th scope="col">Bank Address</th>
+            <th scope="col">Registration No.</th>
+            <th scope="col">Logs</th>
+            <th scope="col">Transaction Count</th>
+            <th scope="col">Funded (ETH)</th>
+            <th scope="col">Transferred (ETH)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows here -->
+        </tbody>
+      </table>
+      <p id="bank-panel-empty" style="margin-top: 15px; font-style: italic; color: #777;">No banks registered yet.</p>
+    </section>
+
+    <section id="customer-panel" aria-label="Customer KYC Panel Section">
+      <h2>Customer KYC Panel</h2>
+      <form id="customer-kyc-form" novalidate>
+        <label for="customer-name">Name</label>
+        <input type="text" id="customer-name" name="customer-name" placeholder="Your Name" required />
+        <label for="document-hash">Document Hash</label>
+        <input type="text" id="document-hash" name="document-hash" placeholder="Document Hash" required />
+        <button type="submit" aria-label="Submit KYC">Submit KYC</button>
+        <button type="button" id="check-kyc-status-btn" aria-label="Check KYC Status">Check Status</button>
+      </form>
+      <p id="kyc-status" style="margin-top: 15px; font-weight: 600;">KYC Status: Pending</p>
+    </section>
+
+    <section id="admin-panel" aria-label="Admin Panel Section">
+      <h2>Admin Panel - Manage Banks</h2>
+      <form id="add-bank-form" novalidate>
+        <label for="admin-bank-name">Bank Name</label>
+        <input type="text" id="admin-bank-name" name="admin-bank-name" placeholder="e.g., Canara Bank" required />
+        <label for="admin-bank-address">Bank Address</label>
+        <input type="text" id="admin-bank-address" name="admin-bank-address" placeholder="0x..." required />
+        <label for="admin-registration-no">Registration Number</label>
+        <input type="text" id="admin-registration-no" name="admin-registration-no" placeholder="e.g., 1234" required />
+        <button type="submit" aria-label="Add Bank">Add Bank</button>
+      </form>
+      <h3 style="margin-top: 40px;">Registered Banks</h3>
+      <table id="admin-bank-table" aria-describedby="admin-panel-desc" style="max-width: 700px; margin-top: 10px;">
+        <caption id="admin-panel-desc" style="text-align:left; font-style: italic; margin-bottom: 8px; color:#555;">
+          List of banks you can remove.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Bank Name</th>
+            <th scope="col">Bank Address</th>
+            <th scope="col">Registration No.</th>
+            <th scope="col">Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dynamic rows here -->
+        </tbody>
+      </table>
+      <p id="admin-empty" style="margin-top: 15px; font-style: italic; color: #777;">No banks registered yet.</p>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.5/dist/web3.min.js"></script>
+<script>
+  // Replace with your contract's ABI and address
+  const CONTRACT_ADDRESS = "0x5AA17695c613dF0acD91dd2CB75b579055CD1663";
+  const CONTRACT_ABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_registerNumber",
+				"type": "uint256"
+			}
+		],
+		"name": "addBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			}
+		],
+		"name": "BankAdded",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "BankRemoved",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "bankAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "fundBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "login",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "count",
+				"type": "uint256"
+			}
+		],
+		"name": "Login",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bankAddress",
+				"type": "address"
+			}
+		],
+		"name": "removeBank",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_documentHash",
+				"type": "string"
+			}
+		],
+		"name": "submitKYC",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "transfer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "receiver",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "Transfer",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "approve",
+				"type": "bool"
+			}
+		],
+		"name": "verifyKYC",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "bankAddresses",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "index",
+				"type": "uint256"
+			}
+		],
+		"name": "getBankAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_bank",
+				"type": "address"
+			}
+		],
+		"name": "getBankDetails",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getBanksCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getKYCStatus",
+		"outputs": [
+			{
+				"internalType": "enum DecentralizedKYC.Status",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycProviders",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "kycRecords",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "documentHash",
+				"type": "string"
+			},
+			{
+				"internalType": "enum DecentralizedKYC.Status",
+				"name": "status",
+				"type": "uint8"
+			},
+			{
+				"internalType": "address",
+				"name": "verifiedBy",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "registeredBanks",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "addr",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "registerNumber",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "loginCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "exists",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
+
+  let web3;
+  let contract;
+  let connectedAccount;
+  let authMode = 'login';
+
+  // Initialize Web3
+  async function initWeb3() {
+    if (window.ethereum) {
+      web3 = new Web3(window.ethereum);
+      try {
+        await window.ethereum.enable();
+        return true;
+      } catch (error) {
+        alert('User denied account access');
+        return false;
+      }
+    } else if (window.web3) {
+      web3 = new Web3(web3.currentProvider);
+      return true;
+    } else {
+      alert('Non-Ethereum browser detected. Please install MetaMask!');
+      return false;
+    }
+  }
+
+  async function connectWallet() {
+    if (!await initWeb3()) return;
+    try {
+      const accounts = await web3.eth.getAccounts();
+      connectedAccount = accounts[0];
+      document.getElementById('wallet-address').textContent = connectedAccount.slice(0,6) + '...' + connectedAccount.slice(-4);
+      document.getElementById('transfer-sender-address').value = connectedAccount;
+      document.getElementById('connect-wallet-btn').disabled = true;
+      document.getElementById('connect-wallet-btn').textContent = 'Wallet Connected';
+
+      contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+      await updateAdminPanel();
+      await updateBankPanel();
+      await showYourBankDetailsIfAdmin();
+
+      showSection('bank-panel');
+      highlightSidebar('bank-panel');
+    } catch (err) {
+      alert('Failed to connect wallet: ' + err.message);
+    }
+  }
+
+  async function fetchBanks() {
+    try {
+      const bankCount = await contract.methods.getBankCount().call();
+      const banks = [];
+      for(let i=0; i<bankCount; i++) {
+        const bank = await contract.methods.banks(i).call();
+        banks.push(bank);
+      }
+      return banks;
+    } catch (err) {
+      alert('Error fetching banks: ' + err.message);
+      return [];
+    }
+  }
+
+  async function updateBankPanel() {
+    const tbody = document.querySelector('#bank-table tbody');
+    tbody.innerHTML = '';
+    const banks = await fetchBanks();
+    if (banks.length === 0) {
+      document.getElementById('bank-panel-empty').style.display = 'block';
+      return;
+    }
+    document.getElementById('bank-panel-empty').style.display = 'none';
+    banks.forEach(bank => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${bank.name}</td>
+        <td>${bank.bankAddress}</td>
+        <td>${bank.registrationNumber}</td>
+        <td>No logs</td>
+        <td>0</td>
+        <td>0</td>
+        <td>0</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function updateAdminPanel() {
+    const tbody = document.querySelector('#admin-bank-table tbody');
+    tbody.innerHTML = '';
+    const banks = await fetchBanks();
+    if (banks.length === 0) {
+      document.getElementById('admin-empty').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-empty').style.display = 'none';
+    banks.forEach(bank => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${bank.name}</td>
+        <td>${bank.bankAddress}</td>
+        <td>${bank.registrationNumber}</td>
+        <td><button class="remove-btn" data-address="${bank.bankAddress}">Remove</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const address = btn.getAttribute('data-address');
+        if (confirm(`Remove bank ${address}?`)) {
+          try {
+            await contract.methods.removeBank(address).send({ from: connectedAccount });
+            alert('Bank removed');
+            await updateAdminPanel();
+            await updateBankPanel();
+            await showYourBankDetailsIfAdmin();
+          } catch (err) {
+            alert('Error: ' + err.message);
+          }
+        }
+      });
+    });
+  }
+
+  async function showYourBankDetailsIfAdmin() {
+    const panel = document.getElementById('your-bank-details');
+    const nameSpan = document.getElementById('your-bank-name');
+    const addressSpan = document.getElementById('your-bank-address');
+    const regNoSpan = document.getElementById('your-bank-regno');
+    if (!connectedAccount) {
+      panel.style.display = 'none';
+      return;
+    }
+    const banks = await fetchBanks();
+    const bank = banks.find(b => b.bankAddress.toLowerCase() === connectedAccount.toLowerCase());
+    if (bank) {
+      nameSpan.textContent = bank.name;
+      addressSpan.textContent = bank.bankAddress;
+      regNoSpan.textContent = bank.registrationNumber;
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  function setAuthMode(mode) {
+    const authTitle = document.getElementById('auth-title');
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    const authSwitchText = document.getElementById('auth-switch-text');
+    const authConfirmContainer = document.getElementById('auth-confirm-container');
+    const authExtraFields = document.getElementById('auth-extra-fields');
+    const authError = document.getElementById('auth-error');
+    authMode = mode;
+    if (mode === 'login') {
+      authTitle.textContent = 'Login';
+      authSubmitBtn.textContent = 'Login';
+      authSwitchText.innerHTML = `Don't have an account? <a id="switch-to-signup" href="#">Sign Up</a>`;
+      authConfirmContainer.style.display = 'none';
+      authExtraFields.style.display = 'none';
+    } else {
+      authTitle.textContent = 'Sign Up';
+      authSubmitBtn.textContent = 'Sign Up';
+      authSwitchText.innerHTML = `Already have an account? <a id="switch-to-login" href="#">Login</a>`;
+      authConfirmContainer.style.display = 'block';
+      authExtraFields.style.display = 'block';
+    }
+    authError.style.display = 'none';
+    document.getElementById('auth-form').reset();
+    // Reattach event listeners for new links
+    document.getElementById('switch-to-signup')?.addEventListener('click', e => {
+      e.preventDefault();
+      setAuthMode('signup');
+    });
+    document.getElementById('switch-to-login')?.addEventListener('click', e => {
+      e.preventDefault();
+      setAuthMode('login');
+    });
+  }
+
+  document.getElementById('auth-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value.trim();
+    const authError = document.getElementById('auth-error');
+    if (!email || !password) {
+      authError.textContent = 'Please fill in all fields.';
+      authError.style.display = 'block';
+      return;
+    }
+    if (authMode === 'signup') {
+      const confirmPasswordVal = document.getElementById('auth-confirm-password').value.trim();
+      const dobVal = document.getElementById('auth-dob').value;
+      const aadhaarVal = document.getElementById('auth-aadhaar').value.trim();
+      const aadhaarRegex = /^\d{4}\s\d{4}\s\d{4}$/;
+      if (!dobVal) {
+        authError.textContent = 'Please enter your Date of Birth.';
+        authError.style.display = 'block';
+        return;
+      }
+      if (!aadhaarVal) {
+        authError.textContent = 'Please enter your Aadhaar Number.';
+        authError.style.display = 'block';
+        return;
+      }
+      if (!aadhaarRegex.test(aadhaarVal)) {
+        authError.textContent = 'Aadhaar Number must be in format XXXX XXXX XXXX.';
+        authError.style.display = 'block';
+        return;
+      }
+      if (password !== confirmPasswordVal) {
+        authError.textContent = 'Passwords do not match.';
+        authError.style.display = 'block';
+        return;
+      }
+      alert(`Sign up successful!\nDOB: ${dobVal}\nAadhaar: ${aadhaarVal}\nYou can now login.`);
+      setAuthMode('login');
+      return;
+    }
+    authError.style.display = 'none';
+    document.getElementById('auth-container').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    showSection('fund-bank');
+  });
+
+  document.getElementById('auth-switch-text').addEventListener('click', e => {
+    if (e.target.id === 'switch-to-signup') {
+      e.preventDefault();
+      setAuthMode('signup');
+    } else if (e.target.id === 'switch-to-login') {
+      e.preventDefault();
+      setAuthMode('login');
+    }
+  });
+
+  document.querySelectorAll('#sidebar nav a[data-section]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      showSection(link.dataset.section);
+    });
+  });
+
+  document.getElementById('logout-link').addEventListener('click', e => {
+    e.preventDefault();
+    if (confirm('Are you sure you want to logout?')) {
+      connectedAccount = null;
+      document.getElementById('wallet-address').textContent = '';
+      document.getElementById('connect-wallet-btn').disabled = false;
+      document.getElementById('connect-wallet-btn').textContent = 'Connect Wallet';
+      document.getElementById('your-bank-details').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('auth-container').style.display = 'block';
+      setAuthMode('login');
+    }
+  });
+
+  document.getElementById('connect-wallet-btn').addEventListener('click', connectWallet);
+
+  document.getElementById('add-bank-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('admin-bank-name').value.trim();
+    const address = document.getElementById('admin-bank-address').value.trim();
+    const regNo = document.getElementById('admin-registration-no').value.trim();
+    try {
+      await contract.methods.addBank(name, address, regNo).send({ from: connectedAccount });
+      alert('Bank added successfully!');
+      await updateAdminPanel();
+      await updateBankPanel();
+      await showYourBankDetailsIfAdmin();
+      e.target.reset();
+    } catch (err) {
+      alert('Error adding bank: ' + err.message);
+    }
+  });
+
+  // Add max date for DOB input
+  const dobInput = document.getElementById('auth-dob');
+  if (dobInput) dobInput.max = new Date().toISOString().split('T')[0];
+
+  // Sidebar toggle
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  });
+
+  // Initialize UI
+  setAuthMode('login');
+  document.getElementById('auth-container').style.display = 'block';
+
+</script>
+</body>
+</html>
